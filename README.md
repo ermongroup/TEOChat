@@ -16,8 +16,8 @@
 
 </h5>
 
-<!-- ## 📰 News
-* -->
+## 📰 News
+* **[2024.10.9]**  [Paper](https://arxiv.org/abs/2410.06234) and 🤗 [Hugging Face demo](https://huggingface.co/spaces/jirvin16/TEOChat) are available! Please feel free to **watch** 👀 this repository for the latest updates.
 
 ## 😮 Highlights 
 
@@ -102,7 +102,7 @@ If you find our paper and code useful in your research, please consider giving a
 ```BibTeX
 @article{irvin2024teochat,
   title={TEOChat: A Large Vision-Language Assistant for Temporal Earth Observation Data},
-  author={Liu, Emily Ruoyu and Chen, Joyce Chuyi and Dormoy, Ines and Kim, Jinyoung and Khanna, Samar and Zheng, Zhuo and Ermon, Stefano},
+  author={Irvin, Jeremy Andrew and Liu, Emily Ruoyu and Chen, Joyce Chuyi and Dormoy, Ines and Kim, Jinyoung and Khanna, Samar and Zheng, Zhuo and Ermon, Stefano},
   journal={arXiv preprint arXiv:2410.06234},
   year={2024}
 }
