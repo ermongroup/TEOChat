@@ -13,15 +13,15 @@ from transformers import AutoTokenizer
 
 
 def upload(args):
-    # device = "cpu"
-    # model = LlavaLlamaForCausalLM.from_pretrained(args.model_path, low_cpu_mem_usage=True, cache_dir=args.cache_dir, device_map={"": device})
+    device = "cpu"
+    model = LlavaLlamaForCausalLM.from_pretrained(args.model_path, low_cpu_mem_usage=True, cache_dir=args.cache_dir, device_map={"": device})
 
-    # image_tower = model.get_image_tower()
-    # if not image_tower.is_loaded:
-    #     image_tower.load_model()
-    # image_tower.to(device=device, dtype=torch.float16)
+    image_tower = model.get_image_tower()
+    if not image_tower.is_loaded:
+        image_tower.load_model()
+    image_tower.to(device=device, dtype=torch.float16)
 
-    # model.push_to_hub(args.upload_model_path)
+    model.push_to_hub(args.upload_model_path)
 
     # Upload tokenizer 
     tokenizer = AutoTokenizer.from_pretrained(args.model_base, use_fast=False)

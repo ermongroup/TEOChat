@@ -15,7 +15,6 @@
 #    limitations under the License.
 
 import os
-import json
 import copy
 import torch
 import random
@@ -26,7 +25,8 @@ from PIL import Image
 from datetime import datetime
 from torch.utils.data import Dataset
 from dataclasses import dataclass, field
-from typing import Dict, Optional, Sequence, List
+from typing import Dict, Optional, Sequence
+from datasets import load_dataset
 
 from videollava.model import *
 from videollava.utils import order_pick_k
@@ -35,9 +35,6 @@ from videollava import conversation as conversation_lib
 from videollava.train.llava_trainer import LLaVATrainer
 from videollava.constants import IGNORE_INDEX, DEFAULT_IMAGE_TOKEN, DEFAULT_VIDEO_TOKEN,\
                                  MAX_IMAGE_LENGTH, MAX_VIDEO_LENGTH
-
-
-os.environ["WANDB_PROJECT"] = "geovlm"
 
 
 local_rank = None
@@ -73,9 +70,9 @@ class DataArguments:
     is_multimodal: bool = False
     image_aspect_ratio: str = 'square'
     # ===================================================================
-    data_path: Optional[List[str]] = field(default=None, metadata={"help": "Path to the training data."})
-    image_folder: Optional[str] = field(default=None)
-    video_folder: Optional[str] = field(default=None)
+    data_name: str = field(default="jirvin16/TEOChatlas")
+    data_split: str = field(default="train")
+    data_cache_dir: str = field(default=None)
     num_frames: int = 8
     video_as_image_list: bool = False
     prompt_strategy: Optional[str] = field(default=None)
@@ -666,6 +663,7 @@ def preprocess(
 
     return dict(input_ids=input_ids, labels=targets)
 
+
 def expand2square(pil_img, background_color):
     width, height = pil_img.size
     if width == height:
@@ -679,41 +677,25 @@ def expand2square(pil_img, background_color):
         result.paste(pil_img, ((height - width) // 2, 0))
         return result
 
+
 class LazySupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
-    def __init__(self, data_path: str,
+    def __init__(self,
                  tokenizer: transformers.PreTrainedTokenizer,
                  data_args: DataArguments):
         super(LazySupervisedDataset, self).__init__()
         # ================================================
-        list_data_dict = []
-        for data in data_path:
-            data = json.load(open(data, "r"))
-            for i in data:
-                i['id'] = len(list_data_dict)
-                list_data_dict.append(i)
+
         # ================================================
 
         rank0_print("Formatting inputs...Skip in lazy mode")
         self.tokenizer = tokenizer
-        self.list_data_dict = list_data_dict
+        self.list_data_dict = load_dataset(data_args.data_name, split="train", cache_dir=data_args.data_cache_dir)
         self.data_args = data_args
-        if self.data_args.image_folder is None:
-            print("Warning: 'image_folder' is None. Full paths to the images will be expected in the JSON.")
-        if self.data_args.video_folder is None:
-            print("Warning: 'video_folder' is None. Full paths to the videos will be expected in the JSON.")
 
     def __len__(self):
         return len(self.list_data_dict)
-
-    # @property
-    # def lengths(self):
-    #     length_list = []
-    #     for sample in self.list_data_dict:
-    #         img_tokens = 128 if 'image' in sample else 0
-    #         length_list.append(sum(len(conv['value'].split()) for conv in sample['conversations']) + img_tokens)
-    #     return length_list
 
     @property
     def modality_lengths(self):
@@ -725,23 +707,20 @@ class LazySupervisedDataset(Dataset):
             # ===========================================================================
             length_list.append(cur_len)
         return length_list
+   
     def __getitem__(self, i) -> Dict[str, torch.Tensor]:
         try:
             sources = self.list_data_dict[i]
             if isinstance(i, int):
                 sources = [sources]
-            assert len(sources) == 1, "Don't know why it is wrapped to a list"  # FIXME
             # ======================================================================================================
             if 'image' in sources[0] and 'video' not in sources[0]:
+                # Warning: this code has not been tested recently
                 image_file = self.list_data_dict[i]['image']
                 image_processor = self.data_args.image_processor
                 image_file = image_file if isinstance(image_file, list) else [image_file]
                 image_file, _ = order_pick_k(image_file, MAX_IMAGE_LENGTH)
-                image_folder = self.data_args.image_folder
-                if image_folder is not None:
-                    image = [Image.open(os.path.join(image_folder, file)).convert('RGB') for file in image_file]
-                else:
-                    image = [Image.open(file).convert('RGB') for file in image_file]
+                image = [Image.open(file).convert('RGB') for file in image_file]
                 if self.data_args.image_aspect_ratio == 'pad':
                     image = [expand2square(i, tuple(int(x * 255) for x in image_processor.image_mean)) for i in image]
                     image = [image_processor.preprocess(i, return_tensors='pt')['pixel_values'][0] for i in image]
@@ -752,38 +731,29 @@ class LazySupervisedDataset(Dataset):
 
             elif 'image' not in sources[0] and 'video' in sources[0]:
                 if not self.data_args.video_as_image_list:
+                    # Warning: this code has not been tested recently
                     video_file = self.list_data_dict[i]['video']
-                    video_folder = self.data_args.video_folder
                     video_processor = self.data_args.video_processor
                     video_file = video_file if isinstance(video_file, list) else [video_file]
                     video_file = order_pick_k(video_file, MAX_VIDEO_LENGTH)
-                    if video_folder is not None:
-                        video = [os.path.join(video_folder, file) for file in video_file]
-                    else:
-                        video = video_file
+                    video = video_file
                     image = [video_processor(i, return_tensors='pt')['pixel_values'][0] for i in video]  # fake image
                 else:
                     image_files = self.list_data_dict[i]['video']
                     if not isinstance(image_files, list):
                         raise ValueError("Found single image but list of images expected")
                     image_files, indices = order_pick_k(image_files, MAX_IMAGE_LENGTH)
-                    if 'metadata' in self.list_data_dict[i]:
-                        metadata = self.list_data_dict[i]['metadata']
+                    if 'timestamp' in self.list_data_dict[i] and len(self.list_data_dict[i]['timestamp']) > 0:
+                        timestamps = self.list_data_dict[i]['timestamp']
                         if indices is not None:
-                            metadata = [metadata[i] for i in indices]
-                        if 'timestamp' in metadata[0]:
-                            # metadata has a 'timestamp' key for each element formatted "Y-M-d"
-                            # sort the image files by the timestamp
-                            image_files, metadata = zip(*sorted(
-                                zip(image_files, metadata),
-                                key=lambda t: datetime.strptime(t[1]["timestamp"], "%Y-%m-%d")
-                            ))
-                    image_folder = self.data_args.image_folder
-                    if image_folder is not None:
-                        image = [Image.open(os.path.join(image_folder, file)).convert('RGB')
-                                for file in image_files]
-                    else:
-                        image = [Image.open(file).convert('RGB') for file in image_files]
+                            timestamps = [timestamps[i] for i in indices]
+                        # timestamps has each element formatted "Y-M-d"
+                        # sort the image files by the timestamp
+                        image_files, timestamps = zip(*sorted(
+                            zip(image_files, timestamps),
+                            key=lambda t: datetime.strptime(t[1], "%Y-%m-%d")
+                        ))
+                    image = [Image.open(file).convert('RGB') for file in image_files]
                     image_processor = self.data_args.image_processor
                     if self.data_args.image_aspect_ratio == 'pad':
                         image = [expand2square(i, tuple(int(x * 255) for x in image_processor.image_mean)) for i in image]
@@ -791,27 +761,23 @@ class LazySupervisedDataset(Dataset):
                     else:
                         image = [image_processor.preprocess(i, return_tensors='pt')['pixel_values'][0] for i in image]
                 
-                sources = preprocess_multimodal(copy.deepcopy([e["conversations"] for e in sources]), self.data_args)
                 num_video_images = len(image)
+                sources = preprocess_multimodal(copy.deepcopy([e["conversations"] for e in sources]), self.data_args, num_video_images)
                 data_dict = preprocess(sources, self.tokenizer, has_image=True)
 
             elif 'image' in sources[0] and 'video' in sources[0]:
+                # Warning: this code has not been tested recently
                 # rank0_print('image & video')
                 # video must before image
                 video_file = self.list_data_dict[i]['video']
-                video_folder = self.data_args.video_folder
                 video_processor = self.data_args.video_processor
 
                 image_file = self.list_data_dict[i]['image']
-                image_folder = self.data_args.image_folder
                 image_processor = self.data_args.image_processor
 
                 image_file = image_file if isinstance(image_file, list) else [image_file]
                 image_file = order_pick_k(image_file, MAX_IMAGE_LENGTH)
-                if image_folder is not None:
-                    image = [Image.open(os.path.join(image_folder, file)).convert('RGB') for file in image_file]
-                else:
-                    image = [Image.open(file).convert('RGB') for file in image_file]
+                mage = [Image.open(file).convert('RGB') for file in image_file]
                 if self.data_args.image_aspect_ratio == 'pad':
                     image = [expand2square(i, tuple(int(x * 255) for x in image_processor.image_mean)) for i in image]
                     image = [image_processor.preprocess(i, return_tensors='pt')['pixel_values'][0] for i in image]
@@ -821,10 +787,7 @@ class LazySupervisedDataset(Dataset):
                 if not self.data_args.video_as_image_list:
                     video_file = video_file if isinstance(video_file, list) else [video_file]
                     video_file = order_pick_k(video_file, MAX_VIDEO_LENGTH)
-                    if video_folder is not None:
-                        video = [os.path.join(video_folder, file) for file in video_file]
-                    else:
-                        video = video_file
+                    video = video_file
                     video = [video_processor(i, return_tensors='pt')['pixel_values'][0] for i in video]  # fake image
                 else:
                     image_files, indices = order_pick_k(image_files, MAX_IMAGE_LENGTH)
@@ -839,11 +802,7 @@ class LazySupervisedDataset(Dataset):
                                 zip(image_files, metadata),
                                 key=lambda t: datetime.strptime(t[1]["timestamp"], "%Y-%m-%d")
                             ))
-                    if image_folder is not None:
-                        video = [Image.open(os.path.join(image_folder, file)).convert('RGB')
-                                 for file in image_files]
-                    else:
-                        video = [Image.open(file).convert('RGB') for file in image_files]
+                    video = [Image.open(file).convert('RGB') for file in image_files]
                     if self.data_args.image_aspect_ratio == 'pad':
                         video = [expand2square(i, tuple(int(x * 255) for x in image_processor.image_mean)) for i in video]
                         video = [image_processor.preprocess(i, return_tensors='pt')['pixel_values'][0] for i in video]
@@ -855,6 +814,7 @@ class LazySupervisedDataset(Dataset):
                 sources = preprocess_multimodal(copy.deepcopy([e["conversations"] for e in sources]), self.data_args)
                 data_dict = preprocess(sources, self.tokenizer, has_image=True)
             else:
+                # Warning: this code has not been tested recently
                 sources = copy.deepcopy([e["conversations"] for e in sources])
                 data_dict = preprocess(sources, self.tokenizer, has_image=False)
 
@@ -945,7 +905,6 @@ def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer,
                                 data_args) -> Dict:
     """Make dataset and collator for supervised fine-tuning."""
     train_dataset = LazySupervisedDataset(tokenizer=tokenizer,
-                                data_path=data_args.data_path,
                                 data_args=data_args)
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
     return dict(train_dataset=train_dataset,
@@ -1080,7 +1039,6 @@ def train():
 
     # =============================================================================================================
     if model_args.image_tower is not None or model_args.video_tower is not None:
-        # print(model_args)
         model.get_model().initialize_vision_modules(
             model_args=model_args,
             fsdp=training_args.fsdp
@@ -1098,8 +1056,7 @@ def train():
             data_args.video_processor = video_tower.video_processor
             data_args.is_multimodal = True
             data_args.num_frames = video_tower.config.num_frames
-    # =============================================================================================================
-
+        # =============================================================================================================
 
         model.config.image_aspect_ratio = data_args.image_aspect_ratio
         model.config.tokenizer_padding_side = tokenizer.padding_side
@@ -1108,7 +1065,7 @@ def train():
         tokenizer_model_max_length = training_args.tokenizer_model_max_length
         model.config.tokenizer_model_max_length = tokenizer.model_max_length if tokenizer_model_max_length is None else tokenizer_model_max_length
         # =============================================================================================================
-        
+
         model.config.tune_mm_mlp_adapter = training_args.tune_mm_mlp_adapter = model_args.tune_mm_mlp_adapter
         if model_args.tune_mm_mlp_adapter:
             model.requires_grad_(False)

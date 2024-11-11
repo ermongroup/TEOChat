@@ -9,15 +9,29 @@
 
 <h5 align="center">
     
-[![hf_space](https://img.shields.io/badge/🤗-Open%20In%20Spaces-blue.svg)](https://huggingface.co/spaces/jirvin16/TEOChat)
-[![arXiv](https://img.shields.io/badge/Arxiv-2410.06234-b31b1b.svg?logo=arXiv)](http://arxiv.org/abs/2410.06234) <br>
+[![hf_dataset](https://img.shields.io/badge/🤗-Dataset-blue.svg)](https://huggingface.co/datasets/jirvin16/TEOChatlas)
+[![hf_model](https://img.shields.io/badge/🤗-Model-blue.svg)](https://huggingface.co/jirvin16/TEOChat)
+[![hf_space](https://img.shields.io/badge/🤗-Open%20In%20Spaces-blue.svg)](https://huggingface.co/spaces/jirvin16/TEOChat)  <br>
+[![arXiv](https://img.shields.io/badge/Arxiv-2410.06234-b31b1b.svg?logo=arXiv)](http://arxiv.org/abs/2410.06234)
 [![License](https://img.shields.io/badge/License-Apache%202.0-yellow)](https://github.com/ermongroup/TEOChat/blob/main/LICENSE)
 [![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fermongroup%2FTEOChat&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=Visitor&edge_flat=false)](https://hits.seeyoufarm.com)
 
 </h5>
 
 ## 📰 News
-* **[2024.10.9]**  [Paper](https://arxiv.org/abs/2410.06234) and 🤗 [Hugging Face demo](https://huggingface.co/spaces/jirvin16/TEOChat) are available! Please feel free to **watch** 👀 this repository for the latest updates.
+* **[2024.11.11]** 🎉 The [TEOChatlas Dataset](https://huggingface.co/datasets/jirvin16/TEOChatlas) is now available, along with model training code with instructions described in [TRAIN_AND_VALIDATE.md](TRAIN_AND_VALIDATE.md)! Validation code and instructions will be provided soon.
+* **[2024.10.9]** 👀 [Paper](https://arxiv.org/abs/2410.06234), [TEOChat Model](https://huggingface.co/jirvin16/TEOChat), and 🤗 [Hugging Face demo](https://huggingface.co/spaces/jirvin16/TEOChat) are available! Please feel free to **watch** 👀 this repository for the latest updates.
+
+## Table of Contents
+
+* [Highlights](#highlights)
+* [Demo](#demo)
+* [Main Results](#main-results)
+* [Requirements and Installation](#requirements-and-installation)
+* [Training & Validating](#training--validating)
+* [License](#license)
+* [Acknowledgement](#acknowledgement)
+* [Citation](#citation)
 
 ## 😮 Highlights 
 
@@ -82,11 +96,12 @@ cd TEOChat
 conda create -n teochat python=3.9 -y
 conda activate teochat
 pip install --upgrade pip  # enable PEP 660 support
-pip install -r requirements.txt
+pip install -e .
+pip install git+https://github.com/facebookresearch/pytorchvideo
 ```
 
 ## 🗝️ Training & Validating
-The training & validating instructions are in [TRAIN_AND_VALIDATE.md](TRAIN_AND_VALIDATE.md).
+The training & validating instructions, including how to download the TEOChatlas dataset, are in [TRAIN_AND_VALIDATE.md](TRAIN_AND_VALIDATE.md).
 
 ## 👍 Acknowledgement
 * [Video-LLaVA](https://github.com/PKU-YuanGroup/Video-LLaVA) The codebase and model we built upon.
