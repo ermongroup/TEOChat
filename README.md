@@ -24,14 +24,14 @@
 
 ## Table of Contents
 
-* [Highlights](#highlights)
-* [Demo](#demo)
-* [Main Results](#main-results)
-* [Requirements and Installation](#requirements-and-installation)
-* [Training & Validating](#training--validating)
-* [License](#license)
-* [Acknowledgement](#acknowledgement)
-* [Citation](#citation)
+* [Highlights](#-highlights)
+* [Demo](#-demo)
+* [Main Results](#-main-results)
+* [Requirements and Installation](#%EF%B8%8F-requirements-and-installation)
+* [Training & Validating](#%EF%B8%8F-training--validating)
+* [License](#-license)
+* [Acknowledgement](#-acknowledgement)
+* [Citation](#%EF%B8%8F-citation)
 
 ## 😮 Highlights 
 
