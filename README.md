@@ -3,8 +3,8 @@
 <p align="center">
     <img src="static/logo.png" width="150" style="margin-bottom: 0.2;"/>
 <p>
-<h2 align="center"> <a href="http://arxiv.org/abs/2410.06234">TEOChat: Large Language and Vision Assistant for Temporal Earth Observation Data</a></h2>
-<h5 align="center"> If you like our project, please give us a star ⭐ on GitHub for latest update.  </h2>
+<h2 align="center"> <a href="http://arxiv.org/abs/2410.06234">TEOChat: Large Language and Vision Assistant<br> for Temporal Earth Observation Data [ICLR 2025]</a></h2>
+<h5 align="center"> If you like our project, please give us a star ⭐ on GitHub and watch 👀 for the latest updates.  </h2>
 
 
 <h5 align="center">
@@ -19,6 +19,7 @@
 </h5>
 
 ## 📰 News
+* **[2025.1.22]** 🔥 Our work has been accepted to **ICLR 2025**!
 * **[2024.11.11]** 🎉 The [TEOChatlas Dataset](https://huggingface.co/datasets/jirvin16/TEOChatlas) is now available, along with model training code with instructions described in [TRAIN_AND_VALIDATE.md](TRAIN_AND_VALIDATE.md)! Validation code and instructions will be provided soon.
 * **[2024.10.9]** 👀 [Paper](https://arxiv.org/abs/2410.06234), [TEOChat Model](https://huggingface.co/jirvin16/TEOChat), and 🤗 [Hugging Face demo](https://huggingface.co/spaces/jirvin16/TEOChat) are available! Please feel free to **watch** 👀 this repository for the latest updates.
 
