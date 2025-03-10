@@ -47,7 +47,7 @@ sh scripts/train_teochat.sh
 ```bash
 sh scripts/eval_teochat.sh <dataset_split> <model_path> <model_base> <cache_dir> <data_cache_dir>
 ```
-See [eval.py](https://github.com/ermongroup/TEOChat/tree/main/videollava/eval/eval.py) for the full list of dataset splits.
+See [eval.py](https://github.com/ermongroup/TEOChat/tree/main/videollava/eval/eval.py#L76-L83) for the full list of dataset splits.
 
 For example, to evaluate TEOChat on UC Merced, you can run:
 ```bash
