@@ -19,6 +19,7 @@
 </h5>
 
 ## 📰 News
+* **[2025.3.10]** 🔍 Inference and validation code (for classification datasets) is now available! Please see the [Inference](#-inference) section for inference code and [TRAIN_AND_VALIDATE.md](TRAIN_AND_VALIDATE.md) for validation instructions.
 * **[2025.1.22]** 🔥 Our work has been accepted to **ICLR 2025**!
 * **[2024.11.11]** 🎉 The [TEOChatlas Dataset](https://huggingface.co/datasets/jirvin16/TEOChatlas) is now available, along with model training code with instructions described in [TRAIN_AND_VALIDATE.md](TRAIN_AND_VALIDATE.md)! Validation code and instructions will be provided soon.
 * **[2024.10.9]** 👀 [Paper](https://arxiv.org/abs/2410.06234), [TEOChat Model](https://huggingface.co/jirvin16/TEOChat), and 🤗 [Hugging Face demo](https://huggingface.co/spaces/jirvin16/TEOChat) are available! Please feel free to **watch** 👀 this repository for the latest updates.
@@ -30,6 +31,7 @@
 * [Main Results](#-main-results)
 * [Requirements and Installation](#%EF%B8%8F-requirements-and-installation)
 * [Training & Validating](#%EF%B8%8F-training--validating)
+* [Inference](#-inference)
 * [License](#-license)
 * [Acknowledgement](#-acknowledgement)
 * [Citation](#%EF%B8%8F-citation)
@@ -104,6 +106,23 @@ pip install git+https://github.com/facebookresearch/pytorchvideo
 ## 🗝️ Training & Validating
 The training & validating instructions, including how to download the TEOChatlas dataset, are in [TRAIN_AND_VALIDATE.md](TRAIN_AND_VALIDATE.md).
 
+## 🧠 Inference
+You can use the following code to run inference with TEOChat on GPU:
+```python
+from videollava.eval.eval import load_model
+from videollava.eval.inference import run_inference
+
+tokenizer, model, processor = load_model(model_path="jirvin16/TEOChat", model_base=None, load_8bit=True, device='cuda')
+
+# A list of image paths, all are fed into the model.
+image_paths = ["videollava/serve/examples/xBD_cls_1.png", "videollava/serve/examples/xBD_cls_2.png"]
+# Note you must include the video tag <video> in the input string otherwise the model will not process the images.
+inp = "These are two satellite images in chronological order: <video> Classify the level of damage experienced by the building at location [0, 8, 49, 53]."
+
+response = run_inference(model, processor, tokenizer, inp, image_paths)
+print(response)
+```
+
 ## 👍 Acknowledgement
 * [Video-LLaVA](https://github.com/PKU-YuanGroup/Video-LLaVA) The codebase and model we built upon.
 * [GeoChat](https://github.com/mbzuai-oryx/geochat) The single image instruction-following dataset we included in TEOChatlas.
@@ -116,10 +135,10 @@ The training & validating instructions, including how to download the TEOChatlas
 If you find our paper and code useful in your research, please consider giving a star :star: and citation :pencil:.
 
 ```BibTeX
-@article{irvin2024teochat,
+@inproceedings{irvin2024teochat,
   title={TEOChat: A Large Vision-Language Assistant for Temporal Earth Observation Data},
   author={Irvin, Jeremy Andrew and Liu, Emily Ruoyu and Chen, Joyce Chuyi and Dormoy, Ines and Kim, Jinyoung and Khanna, Samar and Zheng, Zhuo and Ermon, Stefano},
-  journal={arXiv preprint arXiv:2410.06234},
-  year={2024}
+  booktitle={International Conference on Learning Representations},
+  year={2025}
 }
 ```

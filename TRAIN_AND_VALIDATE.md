@@ -43,7 +43,23 @@ sh scripts/train_teochat.sh
 ```
 
 ## Validating TEOChat
-Instructions for validating TEOChat will be provided here.
+
+```bash
+sh scripts/eval_teochat.sh <dataset_split> <model_path> <model_base> <cache_dir> <data_cache_dir>
+```
+See [eval.py](https://github.com/ermongroup/TEOChat/tree/main/videollava/eval/eval.py) for the full list of dataset splits.
+
+For example, to evaluate TEOChat on UC Merced, you can run:
+```bash
+sh scripts/eval_teochat.sh ucm jirvin16/TEOChat
+```
+assuming the model and data are stored in the default cache directories.
+
+To evaluate a newly trained model on UC Merced, you can run:
+```bash
+sh scripts/eval_teochat.sh ucm /path/to/model LanguageBind/Video-LLaVA-7B
+```
+again assuming the model and data are stored in the default cache directories.
 
 ## Fine-tuning TEOChat
 Instructions for fine-tuning TEOChat will be provided here.

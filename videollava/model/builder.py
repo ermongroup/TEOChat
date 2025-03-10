@@ -30,19 +30,6 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
     if device != "cuda":
         kwargs['device_map'] = {"": device}
 
-    if load_8bit:
-        kwargs['load_in_8bit'] = True
-    elif load_4bit:
-        kwargs['load_in_4bit'] = True
-        kwargs['quantization_config'] = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_compute_dtype=torch.float16,
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_quant_type='nf4'
-        )
-    else:
-        kwargs['torch_dtype'] = torch.float16
-
     if 'llava' in model_name.lower() or "teochat" in model_name.lower():
         # Load LLaVA model
         if 'lora' in model_name.lower() and model_base is None:
@@ -78,8 +65,10 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
             from peft import PeftModel
             print('Loading LoRA weights...')
             model = PeftModel.from_pretrained(model, model_path, **kwargs)
-            print('Merging LoRA weights...')
-            model = model.merge_and_unload()
+            if not load_8bit and not load_4bit:
+                # Do not merge weights if loading in 8bit or 4bit due to rounding errors
+                print('Merging LoRA weights...')
+                model = model.merge_and_unload()
             print('Model is loaded...')
         elif model_base is not None:
             # this may be mm projector only
@@ -99,6 +88,22 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
             mm_projector_weights = {k: v.to(torch.float16) for k, v in mm_projector_weights.items()}
             model.load_state_dict(mm_projector_weights, strict=False)
         else:
+            # Note: This was originally before the top-level if block (line 32), but this leads to incorrect casting
+            # when using 8bit or 4bit quantization when loading LoRA weights.
+            # This code is correct when loading non-LoRA (merged) weights.
+            if load_8bit:
+                kwargs['load_in_8bit'] = True
+            elif load_4bit:
+                kwargs['load_in_4bit'] = True
+                kwargs['quantization_config'] = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_compute_dtype=torch.float16,
+                    bnb_4bit_use_double_quant=True,
+                    bnb_4bit_quant_type='nf4'
+                )
+            else:
+                kwargs['torch_dtype'] = torch.float16
+
             if 'mpt' in model_name.lower():
                 tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=True)
                 model = LlavaMPTForCausalLM.from_pretrained(model_path, low_cpu_mem_usage=True, **kwargs)
