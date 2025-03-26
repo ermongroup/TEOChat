@@ -8,7 +8,7 @@
 
 
 <h5 align="center">
-    
+
 [![hf_dataset](https://img.shields.io/badge/🤗-Dataset-blue.svg)](https://huggingface.co/datasets/jirvin16/TEOChatlas)
 [![hf_model](https://img.shields.io/badge/🤗-Model-blue.svg)](https://huggingface.co/jirvin16/TEOChat)
 [![hf_space](https://img.shields.io/badge/🤗-Open%20In%20Spaces-blue.svg)](https://huggingface.co/spaces/jirvin16/TEOChat)  <br>
@@ -19,6 +19,7 @@
 </h5>
 
 ## 📰 News
+* **[2025.3.25]** 📊 Validation code for the detection datasets and code for fine-tuning TEOChat is now available! Please see [TRAIN_AND_VALIDATE.md](TRAIN_AND_VALIDATE.md) for validation and fine-tuning instructions.
 * **[2025.3.10]** 🔍 Inference and validation code (for classification datasets) is now available! Please see the [Inference](#-inference) section for inference code and [TRAIN_AND_VALIDATE.md](TRAIN_AND_VALIDATE.md) for validation instructions.
 * **[2025.1.22]** 🔥 Our work has been accepted to **ICLR 2025**!
 * **[2024.11.11]** 🎉 The [TEOChatlas Dataset](https://huggingface.co/datasets/jirvin16/TEOChatlas) is now available, along with model training code with instructions described in [TRAIN_AND_VALIDATE.md](TRAIN_AND_VALIDATE.md)! Validation code and instructions will be provided soon.

@@ -7,7 +7,9 @@ from videollava.model.builder import load_pretrained_model
 from videollava.mm_utils import get_model_name_from_path
 from videollava.utils import disable_torch_init
 
-from videollava.eval.classification import classification_inference, classification_metrics
+from videollava.eval.inference import run_inference
+from videollava.eval.classification import classification_metrics
+from videollava.eval.detection import detection_metrics
 
 
 def load_model(model_path, model_base, load_8bit=False, load_4bit=False, cache_dir=None, device=None):
@@ -66,9 +68,22 @@ def eval(
         "hrben",
     ]
 
+    detection_datasets = [
+        "xbd_loc",
+        "xbd_dmg_cls",
+        "s2_det",
+        "xbd_sre_qa_rqa",
+        "s2_sre_qa",
+        "s2_rqa",
+        "qfabric_rqa2",
+        "qfabric_rqa5_rtqa5",
+        "qfabric_tre_rtqa",
+    ]
+
     if dataset_name in classification_datasets:
-        eval_inference_fn = classification_inference
         eval_metrics_fn = classification_metrics
+    elif dataset_name in detection_datasets:
+        eval_metrics_fn = detection_metrics
     else:
         raise ValueError(f"Unsupported dataset: {dataset_name}")
 
@@ -81,6 +96,15 @@ def eval(
         "ucm": "UCMerced",
         "lrben": "LRBEN",
         "hrben": "HRBEN",
+        "xbd_loc": "xBD_Change_Detection_Localization",
+        "xbd_dmg_cls": "xBD_Change_Detection_Classification",
+        "s2_det": "S2Looking_Change_Detection",
+        "xbd_sre_qa_rqa": "xBD_SRE_QA_RQA",
+        "s2_sre_qa": "S2Looking_SRE_QA",
+        "s2_rqa": "S2Looking_RQA",
+        "qfabric_rqa2": "QFabric_RQA2",
+        "qfabric_rqa5_rtqa5": "QFabric_RQA5_RTQA5",
+        "qfabric_tre_rtqa": "QFabric_TRE_RTQA",
     }
     hf_split = dataset_name2hf_split[dataset_name]
 
@@ -126,7 +150,7 @@ def eval(
         )
 
         dataset = load_dataset("jirvin16/TEOChatlas", split=f"eval_{hf_split}", cache_dir=data_cache_dir, trust_remote_code=True)
-        outputs = eval_inference_fn(
+        outputs = run_inference(
             dataset,
             model,
             tokenizer,
@@ -141,8 +165,8 @@ def eval(
         with open(out_path, "w") as f:
             json.dump(outputs, f, indent=4)
 
-    metrics = eval_metrics_fn(outputs)
-    print("Metrics:")
+    metrics = eval_metrics_fn(outputs, dataset_name=dataset_name)
+    print(f"Metrics for dataset {dataset_name}:")
     for key, value in metrics.items():
         print(f"\t{key}: {value}")
 

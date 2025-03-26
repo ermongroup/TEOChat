@@ -1,4 +1,6 @@
+import re
 import torch
+from tqdm import tqdm
 from datetime import datetime
 
 from videollava.conversation import conv_templates, SeparatorStyle
@@ -18,7 +20,7 @@ def replace_video_token(prompt, image_paths, prompt_strategy):
     return new_prompt
 
 
-def run_inference(
+def run_inference_single(
         model,
         processor,
         tokenizer,
@@ -72,4 +74,64 @@ def run_inference(
     # removes the end sentence token "</s>" from the output
     outputs = tokenizer.decode(output_ids[0, input_ids.shape[1]:]).replace('</s>', '').strip()
 
+    return outputs
+
+
+def extract_bboxes(bbox_str):
+    # Regular expression to find numbers within brackets
+    pattern = re.compile(r'\[(\d+), (\d+), (\d+), (\d+)\]')
+    # Find all matches and convert them to lists of integers
+    bboxes = [list(map(int, match.groups())) for match in pattern.finditer(bbox_str)]
+    return bboxes
+
+
+def run_inference(
+        dataset,
+        model,
+        tokenizer,
+        processor,
+        prompt_strategy,
+        chronological_prefix,
+        conv_mode,
+        temperature,
+        max_new_tokens
+    ):
+    outputs = []
+    for example in tqdm(dataset):
+        response = run_inference_single(
+            model,
+            processor,
+            tokenizer,
+            example["conversations"][0]['value'],
+            example['video'],
+            conv_mode=conv_mode,
+            timestamps=example['timestamp'],
+            prompt_strategy=prompt_strategy,
+            chronological_prefix=chronological_prefix,
+            temperature=temperature,
+            max_new_tokens=max_new_tokens,
+        )
+        output = {
+            'response': response,
+            'ground_truth': example["conversations"][1]['value'],
+            'task': example['task'],
+        }
+        polygon = example.get('polygon', None)
+        if polygon is not None:
+            output['polygon'] = polygon
+        else:
+            if dataset in ["xbd_loc", "xbd_dmg_cls", "s2_det", "qfabric_rqa2",
+                           "qfabric_rqa5", "xbd_sre_qa_rqa", "s2_sre_qa", "s2_rqa"]:
+                raise ValueError(
+                    f"Polygons not found for dataset {dataset}. " +
+                    "The TEOChatlas dataset was updated to include these polygons on 25 Mar 2025. " +
+                    "Please re-download the json files for these splits."
+                )
+        input_bboxes = extract_bboxes(example["conversations"][0]['value'])
+        output_bboxes = extract_bboxes(example["conversations"][1]['value'])
+        if len(input_bboxes) > 0:
+            output['input_bboxes'] = input_bboxes
+        if len(output_bboxes) > 0:
+            output['output_bboxes'] = output_bboxes
+        outputs.append(output)
     return outputs

@@ -1,59 +1,40 @@
 import string
-from tqdm import tqdm
 from collections import Counter
 
-from videollava.eval.inference import run_inference
+
+def get_string_cleaner(ignore_casing, ignore_punctuation):
+    def clean_string(str):
+        if ignore_casing:
+            str = str.lower()
+        if ignore_punctuation:
+            str = str.translate(str.maketrans('', '', string.punctuation))
+        return str
+    return clean_string
 
 
-def classification_inference(
-        dataset,
-        model,
-        tokenizer,
-        processor,
-        prompt_strategy,
-        chronological_prefix,
-        conv_mode,
-        temperature,
-        max_new_tokens
-    ):
-    outputs = []
-    for example in tqdm(dataset):
-        response = run_inference(
-            model,
-            processor,
-            tokenizer,
-            example["conversations"][0]['value'],
-            example['video'],
-            conv_mode=conv_mode,
-            timestamps=example['timestamp'],
-            prompt_strategy=prompt_strategy,
-            chronological_prefix=chronological_prefix,
-            temperature=temperature,
-            max_new_tokens=max_new_tokens,
-        )
-        output = {
-            'response': response,
-            'ground_truth': example["conversations"][1]['value'],
-            'task': example['task'],
-        }
-        outputs.append(output)
-    return outputs
-
-
-def classification_metrics(outputs, ignore_casing=True, ignore_punctuation=True):
+def classification_metrics(outputs, ignore_casing=True, ignore_punctuation=True, keywords=None, **kwargs):
     tps = Counter()
     task_counts = Counter()
+    clean_string = get_string_cleaner(ignore_casing, ignore_punctuation)
     for output in outputs:
         response = output['response']
         ground_truth = output['ground_truth']
         task = output['task']
-        if ignore_casing:
-            response = response.lower()
-            ground_truth = ground_truth.lower()
-        if ignore_punctuation:
-            response = response.translate(str.maketrans('', '', string.punctuation))
-            ground_truth = ground_truth.translate(str.maketrans('', '', string.punctuation))
-        if response == ground_truth:
+        response = clean_string(response)
+        ground_truth = clean_string(ground_truth)
+        if keywords is not None:
+            matched_keyword = False
+            for keyword in keywords:
+                if keyword in response and keyword in ground_truth:
+                    tps[task] += 1
+                    matched_keyword = True
+                    break
+            if not matched_keyword:
+                if response == ground_truth:
+                    tps[task] += 1
+                else:
+                    print(response, ground_truth)
+        elif response == ground_truth:
             tps[task] += 1
         task_counts[task] += 1
         
