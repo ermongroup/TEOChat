@@ -8,7 +8,6 @@ HF_DATASETS_OFFLINE=0 TRANSFORMERS_OFFLINE=0 deepspeed videollava/train/train.py
     --version v1 \
     --data_name jirvin16/TEOChatlas \
     --data_split train \
-    --data_cache_dir /scr/geovlm/TEOChatlas/tmp \
     --image_tower LanguageBind/LanguageBind_Image \
     --freeze_backbone True \
     --freeze_mm_mlp_adapter False \
@@ -37,7 +36,7 @@ HF_DATASETS_OFFLINE=0 TRANSFORMERS_OFFLINE=0 deepspeed videollava/train/train.py
     --tf32 True \
     --model_max_length 2048  --tokenizer_model_max_length 3072 \
     --gradient_checkpointing True \
-    --dataloader_num_workers 0 \
+    --dataloader_num_workers 8 \
     --video_as_image_list True \
     --prompt_strategy interleave \
     --chronological_prefix True \
