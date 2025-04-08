@@ -111,7 +111,7 @@ The training & validating instructions, including how to download the TEOChatlas
 You can use the following code to run inference with TEOChat on GPU:
 ```python
 from videollava.eval.eval import load_model
-from videollava.eval.inference import run_inference
+from videollava.eval.inference import run_inference_single
 
 tokenizer, model, processor = load_model(model_path="jirvin16/TEOChat", model_base=None, load_8bit=True, device='cuda')
 
@@ -120,7 +120,7 @@ image_paths = ["videollava/serve/examples/xBD_cls_1.png", "videollava/serve/exam
 # Note you must include the video tag <video> in the input string otherwise the model will not process the images.
 inp = "These are two satellite images in chronological order: <video> Classify the level of damage experienced by the building at location [0, 8, 49, 53]."
 
-response = run_inference(model, processor, tokenizer, inp, image_paths)
+response = run_inference_single(model, processor, tokenizer, inp, image_paths)
 print(response)
 ```
 
