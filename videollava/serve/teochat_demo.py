@@ -26,7 +26,7 @@ sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 from videollava.utils import disable_torch_init
 from videollava.model.builder import load_pretrained_model
-from videollava.eval.infer_utils import run_inference_single
+from videollava.eval.inference import run_inference_single
 from videollava.constants import DEFAULT_VIDEO_TOKEN
 from videollava.conversation import conv_templates, Conversation, conv_templates
 from videollava.mm_utils import  get_model_name_from_path
